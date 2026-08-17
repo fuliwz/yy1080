@@ -2,7 +2,7 @@ export async function onRequest(context) {
   const url = new URL(context.request.url)
 
   const target =
-    'https://slapibf.com/' +
+    'https://api.heiapi.cc/' +
     url.pathname.replace('/api/', '') +
     url.search
 
