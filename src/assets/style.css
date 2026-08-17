@@ -1,1 +1,132 @@
-body{background:radial-gradient(circle at top,#0b1220,#050914 60%,#03060d);color:#e6f1ff;overflow-x:hidden}.container{max-width:1600px!important}.navbar{background:rgba(5,9,20,.85)!important;backdrop-filter:blur(10px);border-bottom:1px solid #1e2a44}.player-wrap{background:radial-gradient(circle,#0b1220,#02040a);border-radius:12px;padding:10px;border:1px solid #1e2a44}.section-title{color:#4da3ff;font-weight:700}.col-video{flex:0 0 25%;max-width:25%}@media(max-width:992px){.col-video{flex:0 0 33.333%;max-width:33.333%}}@media(max-width:576px){.col-video{flex:0 0 100%;max-width:100%}}
+/* ===== 全局基础 ===== */
+:root {
+  --bg: #101010;
+  --surface: #181818;
+  --surface-2: #222;
+  --border: #333;
+  --text: #f4f4f4;
+  --muted: #9a9a9a;
+  --gold: #f4c542;
+  --gold-light: #ffd866;
+  --gold-dark: #b88a12;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #181818 0%, var(--bg) 55%, #090909 100%);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  width: 100%;
+  max-width: 1600px !important;
+}
+
+a { color: inherit; }
+
+/* ===== 导航 ===== */
+.navbar {
+  background: rgba(18, 18, 18, .96) !important;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+/* ===== 通用卡片 ===== */
+.ph-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.ph-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 197, 66, .65);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+}
+
+/* 图片比例由 VideoCard.vue 的 .thumb-wrap 统一控制，避免全局 .thumb 冲突 */
+.thumb {
+  display: block;
+  max-width: none;
+}
+
+/* ===== 标题 ===== */
+.title {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ===== 播放器 ===== */
+.player-wrap {
+  background: #0b0b0b;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+/* ===== 分类标题 ===== */
+.section-title {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* ===== 视频网格 ===== */
+.row {
+  min-width: 0;
+}
+
+.col-video {
+  flex: 0 0 25%;
+  max-width: 25%;
+  min-width: 0;
+}
+
+@media (max-width: 992px) {
+  .col-video {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+  }
+}
+
+/* 手机默认一列 */
+@media (max-width: 576px) {
+  .col-video {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* ===== 金色控件 ===== */
+.btn-primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #111;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--gold-light);
+  border-color: var(--gold-light);
+  color: #111;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dark); }
+
+/* ===== 移动端 ===== */
+@media (max-width: 576px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  .row { --bs-gutter-x: 12px; }
+}
