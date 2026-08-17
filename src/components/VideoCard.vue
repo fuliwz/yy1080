@@ -1,10 +1,134 @@
 <template>
-  <router-link :to="`/play/${item.vod_id}`" class="video-card">
-    <div class="thumb-wrap"><img :src="item.vod_pic" class="thumb" /><div class="tag category">{{ item.type_name || '视频' }}</div><div class="tag time">{{ item.vod_time || item.vod_remarks }}</div><div class="play-btn"><i class="bi bi-play-circle-fill"></i></div></div>
-    <div class="info"><div class="title text-truncate">{{ item.vod_name }}</div><div class="meta">播放 {{ item.vod_hits || 0 }} 次</div></div>
-  </router-link>
+  <RouterLink
+    class="video-card"
+    :to="`/play/${video.vod_id}`"
+  >
+    <div class="thumb-wrap">
+      <img
+        :src="imageUrl"
+        :alt="video.vod_name"
+        loading="lazy"
+        @error="onImageError"
+      />
+
+      <span
+        v-if="video.vod_remarks"
+        class="tag"
+      >
+        {{ video.vod_remarks }}
+      </span>
+    </div>
+
+    <div class="content">
+      <h3 class="title">
+        {{ video.vod_name }}
+      </h3>
+
+      <div class="meta">
+        <span>{{ video.vod_year || "未知年份" }}</span>
+
+        <span v-if="video.type_name">
+          · {{ video.type_name }}
+        </span>
+
+        <span v-if="video.vod_area">
+          · {{ video.vod_area }}
+        </span>
+      </div>
+    </div>
+  </RouterLink>
 </template>
-<script setup>defineProps({ item: Object })</script>
+
+<script setup>
+import { computed } from "vue";
+
+const props = defineProps({
+  video: {
+    type: Object,
+    required: true,
+  },
+});
+
+const DEFAULT_COVER =
+  "/images/default-cover.webp";
+
+const imageUrl = computed(() => {
+  return props.video.vod_pic || DEFAULT_COVER;
+});
+
+function onImageError(e) {
+  e.target.src = DEFAULT_COVER;
+}
+</script>
+
 <style scoped>
-.video-card{display:block;text-decoration:none;color:#e6f1ff}.thumb-wrap{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:16/9;width:100%}.thumb{width:100%;height:100%;object-fit:cover;display:block}.tag{position:absolute;font-size:12px;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;z-index:2}.category{top:6px;left:6px}.time{bottom:6px;right:6px}.play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:38px;color:#2b6fff;opacity:0}.video-card:hover .play-btn{opacity:1}.info{padding:6px 2px}.title{font-size:14px;font-weight:600}.meta{font-size:12px;color:#8aa0b8;margin-top:2px}
+.video-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #181818;
+  color: #fff;
+  text-decoration: none;
+  transition: .2s;
+}
+
+.video-card:hover {
+  transform: translateY(-4px);
+}
+
+.thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #2b2b2b;
+}
+
+.thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(229, 9, 20, .9);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 3em;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
+}
+
+.meta {
+  margin-top: 8px;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.4;
+}
 </style>
