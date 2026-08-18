@@ -3,7 +3,7 @@
 import {ref,watch} from 'vue';import {useRoute,useRouter} from 'vue-router';import {getHome} from '../api/cms';import VideoCard from '../components/VideoCard.vue';import VideoCardSkeleton from '../components/VideoCardSkeleton.vue';import Pagination from '../components/Pagination.vue';
 const route=useRoute(),router=useRouter(),list=ref([]),loading=ref(false),page=ref(1),totalPage=ref(1)
 function getPage(){const v=Number(route.query.page||1);return Number.isInteger(v)&&v>0?v:1}
-async function loadData(){page.value=getPage();loading.value=true;try{const r=await getHome(page.value);list.value=r?.data?.list||[];totalPage.value=Number(r?.data?.pagecount||1)}catch{list.value=[];totalPage.value=1}finally{loading.value=false}document.title=`18XX - 第${page.value}页 - 高清影视站`}
+async function loadData(){page.value=getPage();loading.value=true;try{const r=await getHome(page.value);list.value=r?.data?.list||[];totalPage.value=Number(r?.data?.pagecount||1)}catch{list.value=[];totalPage.value=1}finally{loading.value=false}document.title=`91精品 - 第${page.value}页 - 高清成人影视站`}
 function changePage(p){p=Number(p);if(p!==page.value)router.push({name:'home',query:p>1?{page:String(p)}:{}})}
 watch(()=>route.fullPath,loadData,{immediate:true})
 </script>
