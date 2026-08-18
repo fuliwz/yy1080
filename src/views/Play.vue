@@ -84,7 +84,7 @@ async function loadData() {
       recommend.value = (rec?.data?.list || []).filter(v => v.vod_id !== vod.value.vod_id)
     }
 
-    document.title = `${vod.value.vod_name} - 18XX - 在线观看`
+    document.title = `${vod.value.vod_name} - 91精品 - 在线观看`
   } catch (error) {
     console.error('播放页加载失败:', error)
   }
