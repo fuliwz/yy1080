@@ -132,11 +132,7 @@
     "type_pid": 72,
     "type_name": "中字有码"
   },
-  {
-    "type_id": 77,
-    "type_pid": 0,
-    "type_name": "特殊嗜好"
-  },
+
   {
     "type_id": 78,
     "type_pid": 77,
