@@ -5,7 +5,7 @@
     </div>
 
     <h4 class="title">{{ vod?.vod_name }}</h4>
-    <p class="desc">{{ vod?.vod_content }}</p>
+    <div class="desc">{{ vod?.vod_content }}</div>
 
     <h5 class="section-title mt-4">相关推荐</h5>
     <div class="row">
