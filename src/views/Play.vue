@@ -1,107 +1,98 @@
 <template>
   <div class="container py-3">
-    <div class="player-wrap mb-3">
-      <video ref="video" controls class="w-100"></video>
-    </div>
-
-    <h4 class="title">{{ vod?.vod_name }}</h4>
-    <div class="desc">{{ vod?.vod_content }}</div>
-
-    <h5 class="section-title mt-4">相关推荐</h5>
     <div class="row">
-      <div class="col-video mb-3" v-for="item in recommend" :key="item.vod_id">
-        <VideoCard :item="item" />
-      </div>
+      <template v-if="loading">
+        <div class="col-video mb-3" v-for="i in 10" :key="i">
+          <VideoCardSkeleton />
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="col-video mb-3" v-for="v in list" :key="v.vod_id">
+          <VideoCard :item="v" />
+        </div>
+      </template>
     </div>
+
+    <Pagination
+      :page="page"
+      :total="totalPage"
+      @change="changePage"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
-import Plyr from 'plyr'
-import 'plyr/dist/plyr.css'
-import Hls from 'hls.js'
-import { getDetail, getCategoryLatest } from '../api/cms'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { getCategory } from '../api/cms'
 import VideoCard from '../components/VideoCard.vue'
+import VideoCardSkeleton from '../components/VideoCardSkeleton.vue'
+import Pagination from '../components/Pagination.vue'
 
 const route = useRoute()
-const video = ref(null)
-const vod = ref(null)
-const recommend = ref([])
+const router = useRouter()
 
-let player = null
-let hls = null
-
-function destroyPlayer() {
-  hls?.destroy()
-  hls = null
-
-  player?.destroy()
-  player = null
-
-  if (video.value) {
-    video.value.removeAttribute('src')
-    video.value.load()
-  }
-}
-
-function initPlayer(url) {
-  if (!video.value || !url) return
-
-  destroyPlayer()
-  player = new Plyr(video.value, {
-    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen']
-  })
-
-  if (Hls.isSupported()) {
-    hls = new Hls()
-    hls.loadSource(url)
-    hls.attachMedia(video.value)
-  } else {
-    video.value.src = url
-  }
-}
+const list = ref([])
+const loading = ref(false)
+const page = ref(1)
+const totalPage = ref(1)
 
 async function loadData() {
-  const id = route.params.id
-  if (!id) return
+  const p = Number(route.params.page || 1)
 
-  destroyPlayer()
-  vod.value = null
-  recommend.value = []
+  page.value = Number.isInteger(p) && p > 0 ? p : 1
+  loading.value = true
 
   try {
-    const r = await getDetail(id)
-    vod.value = r?.data?.list?.[0] || null
-    if (!vod.value) return
+    const r = await getCategory(
+      route.params.id,
+      page.value
+    )
 
-    const url = vod.value.vod_play_url?.split('#')?.[0]?.split('$')?.[1]
-    initPlayer(url)
+    list.value = r?.data?.list || []
 
-    if (vod.value.type_id) {
-      const rec = await getCategoryLatest(vod.value.type_id, 12)
-      recommend.value = (rec?.data?.list || []).filter(v => v.vod_id !== vod.value.vod_id)
-    }
+    totalPage.value = Number(
+      r?.data?.pagecount || 1
+    )
 
-    document.title = `${vod.value.vod_name} - 91精品 - 在线观看`
-  } catch (error) {
-    console.error('播放页加载失败:', error)
+    // 获取分类名称
+    const typeName =
+      list.value[0]?.type_name || '影片分类'
+
+    // 设置网页标题
+    document.title =
+      `${typeName} - 91精品 - 第${page.value}页`
+
+  } catch {
+    list.value = []
+    totalPage.value = 1
+
+    document.title =
+      `影片分类 - 91精品 - 第${page.value}页`
+
+  } finally {
+    loading.value = false
   }
+}
+
+function changePage(p) {
+  p = Number(p)
+
+  if (p === page.value) return
+
+  router.push({
+    name: 'category',
+    params: {
+      id: route.params.id,
+      ...(p > 1 ? { page: String(p) } : {})
+    }
+  })
 }
 
 watch(
-  () => route.params.id,
-  () => loadData(),
+  () => route.fullPath,
+  loadData,
   { immediate: true }
 )
-
-onBeforeUnmount(destroyPlayer)
 </script>
-
-<style scoped>
-.player-wrap { background: #000; border-radius: 12px; padding: 8px; border: 1px solid #1e2a44; }
-.title { color: #e6f1ff; font-weight: 700; }
-.desc { color: #9fb3c8; }
-.section-title { color: #4da3ff; font-weight: 700; }
-</style>
