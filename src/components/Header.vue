@@ -3,9 +3,9 @@
     <button class="btn btn-menu me-2" type="button" aria-label="打开分类导航" @click="drawerOpen=true">
       <i class="bi bi-list"></i>
     </button>
-    <router-link class="navbar-brand brand" to="/">18XX</router-link>
+    <router-link class="navbar-brand brand" to="/">91精品</router-link>
     <form class="search-box ms-auto" @submit.prevent="goSearch">
-      <input v-model="keyword" class="search-input" placeholder="搜索影片 / 演员 / 分类" aria-label="搜索影片" />
+      <input v-model="keyword" class="search-input" placeholder="尽情发挥" aria-label="搜索影片" />
       <button class="search-btn" type="submit" aria-label="搜索"><i class="bi bi-search"></i></button>
     </form>
   </nav>
