@@ -21,24 +21,34 @@ export function getHome(page = 1, limit = 20) {
   return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit }).then(normalize);
 }
 
+// `sort` is handled by the Cloudflare API proxy. This avoids relying on
+// third-party AppleCMS-compatible providers to honor by/order consistently.
 export function getLatestVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "time", order: "desc" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "latest" }).then(normalize);
 }
 
 export function getHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits", order: "desc" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "hot" }).then(normalize);
 }
 
 export function getDayHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits_day", order: "desc" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "day" }).then(normalize);
 }
 
 export function getWeekHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits_week", order: "desc" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "week" }).then(normalize);
 }
 
-export async function getCategory(id, page = 1) {
-  const res = await get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page });
+export function getMonthHotVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "month" }).then(normalize);
+}
+
+export function getTopVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "score" }).then(normalize);
+}
+
+export async function getCategory(id, page = 1, sort = "latest") {
+  const res = await get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page, sort });
   return normalize(res);
 }
 
@@ -50,7 +60,7 @@ export async function searchVideo(wd, page = 1) {
 }
 
 export function getDetail(id) { return get("/api.php/provide/vod/", { ac: "detail", ids: id }).then(normalize); }
-export function getCategoryLatest(id, limit = 12) { return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: 1, limit, by: "time", order: "desc" }).then(normalize); }
+export function getCategoryLatest(id, limit = 12) { return getCategory(id, 1, "latest").then(res => { res.data.list = res.data.list.slice(0, limit); return res; }); }
 
 let classCache = null;
 let classCacheTime = 0;
