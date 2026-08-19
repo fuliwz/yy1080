@@ -5,35 +5,11 @@
     <div class="sk-line w60"></div>
   </div>
 </template>
-
 <style scoped>
-.sk-card {
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  background: transparent;
-}
-
-.sk-thumb {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 10px;
-  background: linear-gradient(90deg, #222 25%, #2d2d2d 50%, #222 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite linear;
-}
-
-.sk-line {
-  height: 10px;
-  margin-top: 9px;
-  border-radius: 4px;
-  background: #292929;
-}
-
-.w80 { width: 80%; }
-.w60 { width: 60%; }
-
-@keyframes shimmer {
-  to { background-position: -200% 0; }
-}
+.sk-card { width:100%; overflow:hidden; background:transparent; }
+.sk-thumb { width:100%; aspect-ratio:16/9; border-radius:12px; background:linear-gradient(100deg,#14141a 20%,#24242d 38%,#14141a 56%); background-size:220% 100%; animation:shimmer 1.35s infinite linear; }
+.sk-line { height:10px; margin-top:10px; border-radius:99px; background:#202027; }
+.w80{width:80%}.w60{width:60%}
+@keyframes shimmer { from{background-position:200% 0} to{background-position:-20% 0} }
+@media(max-width:640px){.sk-thumb{border-radius:9px}}
 </style>
