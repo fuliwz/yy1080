@@ -1,21 +1,7 @@
 <template>
   <main class="site-main home-page">
     <div class="page-shell">
-      <section class="hero-panel" aria-label="精选内容">
-        <div class="hero-copy">
-          <span class="hero-kicker"><i class="bi bi-stars"></i> TODAY'S PICKS</span>
-          <h1>发现更多精彩内容</h1>
-          <p>简洁、沉浸、快速浏览，随时找到你感兴趣的内容。</p>
-          <div class="hero-actions">
-            <button class="hero-primary" type="button" @click="scrollToVideos"><i class="bi bi-play-fill"></i>开始浏览</button>
-            <router-link class="hero-secondary" :to="{ name: 'home' }"><i class="bi bi-grid-3x3-gap"></i>全部内容</router-link>
-          </div>
-        </div>
-        <div class="hero-orbit" aria-hidden="true">
-          <span class="orbit-dot orbit-dot-a"></span><span class="orbit-dot orbit-dot-b"></span><span class="orbit-ring"></span>
-          <i class="bi bi-play-fill"></i>
-        </div>
-      </section>
+    
 
       <section class="quick-nav" aria-label="快速浏览">
         <button class="quick-item active" type="button" @click="scrollToVideos"><i class="bi bi-lightning-charge-fill"></i><span>最新</span></button>
