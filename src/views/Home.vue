@@ -18,10 +18,28 @@
       </section>
 
       <section class="quick-nav" aria-label="快速浏览">
-        <div class="quick-item active"><i class="bi bi-lightning-charge-fill"></i><span>最新</span></div>
-        <div class="quick-item"><i class="bi bi-fire"></i><span>热门</span></div>
-        <div class="quick-item"><i class="bi bi-clock-history"></i><span>最近更新</span></div>
-        <div class="quick-item"><i class="bi bi-collection-play"></i><span>精选</span></div>
+        <button class="quick-item active" type="button" @click="scrollToVideos"><i class="bi bi-lightning-charge-fill"></i><span>最新</span></button>
+        <button class="quick-item" type="button" @click="scrollToVideos"><i class="bi bi-fire"></i><span>热门</span></button>
+        <button class="quick-item" type="button" @click="scrollToVideos"><i class="bi bi-clock-history"></i><span>最近更新</span></button>
+        <button class="quick-item" type="button" @click="scrollToVideos"><i class="bi bi-collection-play"></i><span>精选</span></button>
+      </section>
+
+      <section v-if="list.length" class="featured-section" aria-label="精选推荐">
+        <div class="section-bar compact">
+          <div><h2 class="section-heading">精选推荐</h2><div class="section-subtitle">从本页内容中为你挑选</div></div>
+        </div>
+        <div class="featured-grid">
+          <router-link v-for="(item, index) in featuredList" :key="item.vod_id" :to="`/play/${item.vod_id}`" class="featured-card">
+            <img :src="cover(item)" :alt="item.vod_name || '视频封面'" loading="lazy" decoding="async" />
+            <div class="featured-overlay"></div>
+            <span class="featured-rank">0{{ index + 1 }}</span>
+            <div class="featured-content">
+              <span class="featured-tag">{{ item.type_name || '精选' }}</span>
+              <strong>{{ item.vod_name || '未命名视频' }}</strong>
+              <small><i class="bi bi-play-circle"></i> {{ item.vod_hits || 0 }} 次播放</small>
+            </div>
+          </router-link>
+        </div>
       </section>
 
       <section id="video-list" class="content-section">
@@ -41,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getHome } from '../api/cms'
 import VideoCard from '../components/VideoCard.vue'
@@ -54,6 +72,13 @@ const list = ref([])
 const loading = ref(false)
 const page = ref(1)
 const totalPage = ref(1)
+const featuredList = computed(() => list.value.slice(0, 3))
+
+function cover(item) {
+  const pic = item?.vod_pic
+  if (!pic) return '/fallback.jpg'
+  return pic.startsWith('//') ? `https:${pic}` : pic
+}
 
 function getPage() {
   const v = Number(route.query.page || 1)
