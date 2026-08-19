@@ -1,28 +1,45 @@
 <template>
-  <nav class="navbar navbar-dark nav-glass px-3">
-    <button class="btn btn-menu me-2" type="button" aria-label="打开分类导航" @click="drawerOpen=true">
-      <i class="bi bi-list"></i>
-    </button>
-    <router-link class="navbar-brand brand" to="/">91精品</router-link>
-    <form class="search-box ms-auto" @submit.prevent="goSearch">
-      <input v-model="keyword" class="search-input" placeholder="尽情发挥" aria-label="搜索影片" />
-      <button class="search-btn" type="submit" aria-label="搜索"><i class="bi bi-search"></i></button>
-    </form>
-  </nav>
+  <header class="site-header">
+    <div class="header-inner">
+      <button class="menu-btn" type="button" aria-label="打开分类导航" @click="drawerOpen=true">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <router-link class="brand" to="/" aria-label="91精品首页">
+        <span class="brand-mark">91</span><span>精品</span>
+      </router-link>
+
+      <nav class="desktop-nav" aria-label="主导航">
+        <router-link to="/" class="nav-link">首页</router-link>
+        <router-link
+          v-for="c in classList.slice(0, 7)"
+          :key="c.type_id"
+          :to="{name:'category',params:{id:c.type_id}}"
+          class="nav-link"
+        >{{ c.type_name }}</router-link>
+      </nav>
+
+      <form class="search-box" @submit.prevent="goSearch">
+        <i class="bi bi-search search-icon"></i>
+        <input v-model="keyword" class="search-input" placeholder="搜索影片" aria-label="搜索影片" />
+        <button class="search-btn" type="submit" aria-label="搜索">搜索</button>
+      </form>
+    </div>
+  </header>
 
   <div v-if="drawerOpen" class="drawer-mask" @click="drawerOpen=false"></div>
-  <div class="drawer" :class="{open:drawerOpen}">
+  <aside class="drawer" :class="{open:drawerOpen}" aria-label="分类导航">
     <div class="drawer-header">
-      <span>分类导航</span>
-      <button class="close-btn" type="button" aria-label="关闭" @click="drawerOpen=false">×</button>
+      <div class="drawer-title">分类导航</div>
+      <button class="close-btn" type="button" aria-label="关闭" @click="drawerOpen=false"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="drawer-body">
-      <router-link class="nav-item" to="/" @click="drawerOpen=false"><i class="bi bi-house"></i>首页</router-link>
-      <router-link v-for="c in classList" :key="c.type_id" class="nav-item" :to="{name:'category',params:{id:c.type_id}}" @click="drawerOpen=false">
-        <i class="bi bi-play-circle"></i>{{ c.type_name }}
+      <router-link class="drawer-item" to="/" @click="drawerOpen=false"><i class="bi bi-house"></i>首页</router-link>
+      <router-link v-for="c in classList" :key="c.type_id" class="drawer-item" :to="{name:'category',params:{id:c.type_id}}" @click="drawerOpen=false">
+        <i class="bi bi-collection-play"></i>{{ c.type_name }}
       </router-link>
     </div>
-  </div>
+  </aside>
 </template>
 
 <script setup>
@@ -52,117 +69,54 @@ onMounted(loadClass)
 </script>
 
 <style scoped>
-.nav-glass {
+.site-header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(18, 18, 18, .96);
-  border-bottom: 1px solid #333;
+  background: rgba(11,11,15,.88);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  backdrop-filter: blur(18px);
 }
-
+.header-inner {
+  width: min(1400px, calc(100% - 32px));
+  min-height: 68px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.menu-btn {
+  width: 38px; height: 38px; flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+  background: #17171f; color: #ddd; font-size: 19px;
+}
+.menu-btn:hover { color: #fff; border-color: rgba(255,77,115,.45); }
 .brand {
-  color: #f4c542 !important;
-  font-weight: 800;
+  display: inline-flex; align-items: center; gap: 7px;
+  color: #fff; text-decoration: none; font-size: 18px; font-weight: 800; white-space: nowrap;
 }
-
-.btn-menu {
-  border: 1px solid #555;
-  color: #f4c542;
-  background: #222;
-}
-
-.btn-menu:hover { border-color: #f4c542; color: #ffd866; }
-
-.search-box {
-  display: flex;
-  max-width: min(420px, 60vw);
-  background: #222;
-  border: 1px solid #3b3b3b;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.search-input {
-  width: 200px;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #fff;
-  padding: 7px 12px;
-}
-
-.search-input::placeholder { color: #888; }
-
-.search-btn {
-  flex: 0 0 auto;
-  border: 0;
-  background: #f4c542;
-  color: #111;
-  padding: 6px 13px;
-}
-
-.drawer-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 1098;
-  background: rgba(0,0,0,.68);
-}
-
-.drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1099;
-  width: 280px;
-  max-width: 85vw;
-  height: 100vh;
-  overflow-y: auto;
-  background: #171717;
-  border-right: 1px solid #3a3a3a;
-  transform: translateX(-100%);
-  transition: transform .25s ease;
-}
-
+.brand-mark { color: #fff; background: linear-gradient(135deg,#ff416d,#ff7894); padding: 4px 7px; border-radius: 8px; box-shadow: 0 5px 18px rgba(255,77,115,.25); }
+.desktop-nav { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.nav-link { padding: 8px 10px; border-radius: 8px; color: #a9a9b2; text-decoration: none; font-size: 13px; white-space: nowrap; }
+.nav-link:hover, .nav-link.router-link-active { color: #fff; background: rgba(255,255,255,.06); }
+.search-box { margin-left: auto; display: flex; align-items: center; width: min(310px, 30vw); min-width: 170px; height: 40px; padding-left: 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px; background: #15151b; }
+.search-icon { color: #777783; font-size: 14px; }
+.search-input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: #fff; padding: 0 10px; font-size: 13px; }
+.search-input::placeholder { color: #666671; }
+.search-btn { height: 32px; margin-right: 4px; padding: 0 12px; border: 0; border-radius: 9px; background: #ff4d73; color: #fff; font-size: 12px; font-weight: 650; }
+.search-btn:hover { background: #ff6385; }
+.drawer-mask { position: fixed; inset: 0; z-index: 1098; background: rgba(0,0,0,.72); }
+.drawer { position: fixed; top: 0; left: 0; z-index: 1099; width: 290px; max-width: 86vw; height: 100vh; overflow-y: auto; background: #111117; border-right: 1px solid rgba(255,255,255,.08); transform: translateX(-100%); transition: transform .25s ease; box-shadow: 18px 0 40px rgba(0,0,0,.35); }
 .drawer.open { transform: translateX(0); }
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px;
-  color: #f4c542;
-  font-weight: 700;
-  border-bottom: 1px solid #333;
-}
-
-.close-btn {
-  border: 0;
-  background: transparent;
-  color: #aaa;
-  font-size: 24px;
-  line-height: 1;
-}
-
-.nav-item {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-  margin-bottom: 5px;
-  padding: 10px 12px;
-  color: #ddd;
-  text-decoration: none;
-  border-radius: 8px;
-}
-
-.nav-item:hover,
-.nav-item.router-link-active {
-  color: #111;
-  background: #f4c542;
-}
-
-@media (max-width: 576px) {
-  .search-box { max-width: 52vw; }
-  .search-input { width: 100%; }
-}
+.drawer-header { height: 68px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.07); }
+.drawer-title { color: #fff; font-weight: 750; }
+.close-btn { border: 0; background: transparent; color: #777783; font-size: 17px; }
+.close-btn:hover { color: #fff; }
+.drawer-body { padding: 12px; }
+.drawer-item { display: flex; align-items: center; gap: 11px; margin: 3px 0; padding: 11px 12px; border-radius: 9px; color: #aaaab3; text-decoration: none; font-size: 14px; }
+.drawer-item i { width: 18px; text-align: center; }
+.drawer-item:hover, .drawer-item.router-link-active { color: #fff; background: rgba(255,77,115,.12); }
+.drawer-item.router-link-active i { color: #ff5a7c; }
+@media (max-width: 900px) { .desktop-nav { display: none; } .search-box { width: min(320px, 48vw); } }
+@media (max-width: 640px) { .header-inner { width: calc(100% - 20px); min-height: 60px; gap: 9px; } .brand { font-size: 16px; } .menu-btn { width: 36px; height: 36px; } .search-box { width: auto; flex: 1; min-width: 0; } .search-btn { font-size: 11px; padding: 0 9px; } }
 </style>
