@@ -1,7 +1,9 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api", timeout: 15000 });
-const get = (url, params = {}) => api.get(url, { params });
+const api = axios.create({ baseURL: "/api", timeout: 12000 });
+const responseCache = new Map();
+const pendingRequests = new Map();
+const CACHE_TIME = 60 * 1000;
 
 function fixVod(item) {
   if (!item) return item;
@@ -11,60 +13,98 @@ function fixVod(item) {
 }
 
 function normalize(res) {
-  res.data.list = (res.data.list || []).map(fixVod);
+  if (res?.data) {
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    if (Array.isArray(root.list)) root.list = root.list.map(fixVod);
+  }
   return res;
 }
+
+function cacheKey(url, params) {
+  const query = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return `${url}?${new URLSearchParams(query).toString()}`;
+}
+
+async function request(url, params = {}, retry = 1) {
+  const key = cacheKey(url, params);
+  const cached = responseCache.get(key);
+  if (cached && Date.now() - cached.time < CACHE_TIME) return cached.value;
+  if (pendingRequests.has(key)) return pendingRequests.get(key);
+
+  const task = (async () => {
+    try {
+      const res = normalize(await api.get(url, { params }));
+      responseCache.set(key, { time: Date.now(), value: res });
+      return res;
+    } catch (error) {
+      if (retry > 0 && (!error.response || error.response.status >= 500)) {
+        await new Promise(resolve => setTimeout(resolve, 350));
+        return request(url, params, retry - 1);
+      }
+      throw error;
+    } finally {
+      pendingRequests.delete(key);
+    }
+  })();
+
+  pendingRequests.set(key, task);
+  return task;
+}
+
+const get = (url, params = {}) => request(url, params);
 
 export function getClass() { return get("/api.php/provide/vod/", { ac: "list" }); }
 
 export function getHome(page = 1, limit = 20) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit });
 }
 
-// `sort` is handled by the Cloudflare API proxy. This avoids relying on
-// third-party AppleCMS-compatible providers to honor by/order consistently.
+// `sort` is handled by the Cloudflare API proxy so providers that ignore
+// AppleCMS by/order still produce genuinely different feeds.
 export function getLatestVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "latest" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "latest" });
 }
-
 export function getHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "hot" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "hot" });
 }
-
 export function getDayHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "day" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "day" });
 }
-
 export function getWeekHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "week" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "week" });
 }
-
 export function getMonthHotVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "month" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "month" });
 }
-
 export function getTopVideos(page = 1, limit = 12) {
-  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "score" }).then(normalize);
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, sort: "score" });
 }
 
 export async function getCategory(id, page = 1, sort = "latest") {
-  const res = await get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page, sort });
-  return normalize(res);
+  return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page, sort });
 }
 
 export async function searchVideo(wd, page = 1) {
   const keyword = (wd || "").trim();
   if (!keyword) return { data: { list: [], pagecount: 0 } };
-  const res = await get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: page });
-  return normalize(res);
+  return get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: page });
 }
 
-export function getDetail(id) { return get("/api.php/provide/vod/", { ac: "detail", ids: id }).then(normalize); }
-export function getCategoryLatest(id, limit = 12) { return getCategory(id, 1, "latest").then(res => { res.data.list = res.data.list.slice(0, limit); return res; }); }
+export function getDetail(id) {
+  return get("/api.php/provide/vod/", { ac: "detail", ids: id });
+}
+
+export function getCategoryLatest(id, limit = 12) {
+  return getCategory(id, 1, "latest").then(res => {
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    root.list = (root.list || []).slice(0, limit);
+    return res;
+  });
+}
 
 let classCache = null;
 let classCacheTime = 0;
-const CACHE_TIME = 60 * 1000;
+const CLASS_CACHE_TIME = 5 * 60 * 1000;
 
 async function asyncPool(limit, array, iteratorFn) {
   const ret = [];
@@ -83,18 +123,24 @@ async function asyncPool(limit, array, iteratorFn) {
 
 async function hasVideo(type_id) {
   try {
-    const res = await get("/api.php/provide/vod/", { ac: "detail", t: type_id, pg: 1 });
-    return (res.data.list || []).length > 0;
+    const res = await get("/api.php/provide/vod/", { ac: "detail", t: type_id, pg: 1, limit: 1 });
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    return (root?.list || []).length > 0;
   } catch { return false; }
 }
 
 export async function getActiveClass() {
   const now = Date.now();
-  if (classCache && now - classCacheTime < CACHE_TIME) return classCache;
+  if (classCache && now - classCacheTime < CLASS_CACHE_TIME) return classCache;
   const res = await getClass();
-  const all = res.data.class || [];
+  const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+  const all = root?.class || [];
   const result = await asyncPool(5, all, async item => (await hasVideo(item.type_id)) ? item : null);
   classCache = result.filter(Boolean);
   classCacheTime = now;
   return classCache;
+}
+
+export function clearApiCache() {
+  responseCache.clear();
 }
