@@ -42,7 +42,7 @@ function handleImageError(event) {
 .play-btn { position: absolute; z-index: 4; top: 50%; left: 50%; width: 50px; height: 50px; display: grid; place-items: center; transform: translate(-50%,-50%) scale(.86); border-radius: 50%; background: rgba(255,77,115,.94); color: #fff; font-size: 30px; line-height: 1; opacity: 0; transition: opacity .2s ease, transform .2s ease; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .video-card:hover .play-btn { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 .info { min-width: 0; padding: 9px 2px 2px; }
-.title { min-height: 2.75em; overflow: hidden; color: #eeeef2; font-size: 14px; font-weight: 650; line-height: 1.38; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.title { min-height: 2.75em; overflow: hidden; color: rgb(255, 120, 148) !important; font-size: 14px; font-weight: 650; line-height: 1.38; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .meta { margin-top: 4px; color: #777783; font-size: 11px; line-height: 1.3; }
 .meta i { font-size: 10px; }
 @media (max-width: 640px) { .thumb-wrap { border-radius: 9px; } .play-btn { width: 42px; height: 42px; font-size: 25px; } .title { font-size: 13px; } }
