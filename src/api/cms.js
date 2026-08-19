@@ -6,34 +6,51 @@ const get = (url, params = {}) => api.get(url, { params });
 function fixVod(item) {
   if (!item) return item;
   let pic = item.vod_pic || item.vod_pic_thumb || item.vod_pic_slide || item.vod_pic_small || "";
-  if (pic && !pic.includes("http")) pic = "https://i0.wp.com/" + pic.replace(/^https?:\/\//, "");
+  if (pic && !/^https?:\/\//i.test(pic)) pic = "https://i0.wp.com/" + pic.replace(/^https?:\/\//, "");
   return { ...item, vod_pic: pic || "/fallback.jpg" };
+}
+
+function normalize(res) {
+  res.data.list = (res.data.list || []).map(fixVod);
+  return res;
 }
 
 export function getClass() { return get("/api.php/provide/vod/", { ac: "list" }); }
 
-export async function getHome(page = 1) {
-  const res = await get("/api.php/provide/vod/", { ac: "detail", pg: page });
-  res.data.list = (res.data.list || []).map(fixVod);
-  return res;
+export function getHome(page = 1, limit = 20) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit }).then(normalize);
+}
+
+export function getLatestVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "time", order: "desc" }).then(normalize);
+}
+
+export function getHotVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits", order: "desc" }).then(normalize);
+}
+
+export function getDayHotVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits_day", order: "desc" }).then(normalize);
+}
+
+export function getWeekHotVideos(page = 1, limit = 12) {
+  return get("/api.php/provide/vod/", { ac: "detail", pg: page, limit, by: "hits_week", order: "desc" }).then(normalize);
 }
 
 export async function getCategory(id, page = 1) {
   const res = await get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page });
-  res.data.list = (res.data.list || []).map(fixVod);
-  return res;
+  return normalize(res);
 }
 
 export async function searchVideo(wd, page = 1) {
   const keyword = (wd || "").trim();
   if (!keyword) return { data: { list: [], pagecount: 0 } };
   const res = await get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: page });
-  res.data.list = (res.data.list || []).map(fixVod);
-  return res;
+  return normalize(res);
 }
 
-export function getDetail(id) { return get("/api.php/provide/vod/", { ac: "detail", ids: id }); }
-export function getCategoryLatest(id, limit = 6) { return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: 1, limit }); }
+export function getDetail(id) { return get("/api.php/provide/vod/", { ac: "detail", ids: id }).then(normalize); }
+export function getCategoryLatest(id, limit = 12) { return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: 1, limit, by: "time", order: "desc" }).then(normalize); }
 
 let classCache = null;
 let classCacheTime = 0;
