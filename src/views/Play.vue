@@ -123,7 +123,7 @@ onBeforeUnmount(destroyPlayer)
 .title-area { min-width:0; }
 .eyebrow { display:flex; align-items:center; gap:7px; margin-bottom:8px; color:#ff6b8d; font-size:10px; font-weight:800; letter-spacing:.15em; }
 .eyebrow span { width:5px; height:5px; border-radius:50%; background:#ff4d73; box-shadow:0 0 10px rgba(255,77,115,.8); }
-.video-title { margin:0; color:#f5f5f7; font-size:clamp(20px,2.5vw,28px); font-weight:750; line-height:1.35; letter-spacing:-.025em; }
+.video-title { margin:0; color:rgb(255, 120, 148) !important; font-size:clamp(20px,2.5vw,28px); font-weight:750; line-height:1.35; letter-spacing:-.025em; }
 .video-meta { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; color:#858590; font-size:12px; }
 .video-meta span { display:inline-flex; align-items:center; gap:5px; }
 .video-meta i { color:#a0a0ab; font-size:11px; }
