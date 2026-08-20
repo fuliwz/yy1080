@@ -45,50 +45,50 @@
   "ys91h.top": [
     {
       "name": "蓝色导航",
-      "url": "https://j7th.bluedaohang.cc/bzxeoq3"
+      "url": "https://wn62.bluedh63.loan/3a49rgw"
     },
     {
       "name": "蓝导航",
-      "url": "https://6m543t.landh17.party/3xpss6"
+      "url": "https://zun7a.landh83.pw/z4gjqs"
     },
     {
-      "name": "花小猪导航",
-      "url": "https://籩f蓧.9qqq.cc/n59"
-    },
-    {
-      "name": "6DD导航",
-      "url": "http://6146d.5ddd6.top/app/v9NtgY"
-    },
-    {
-      "name": "红颜导航",
-      "url": "http://614hy.hongyan2.top/app/Ais9PO"
-    },
-    {
-      "name": "蓝色导航",
-      "url": "https://j7th.bluedaohang.cc/bzxeoq3"
-    },
-    {
-      "name": "蓝导航",
-      "url": "https://6m543t.landh17.party/3xpss6"
-    },
-    {
-      "name": "花小猪导航",
-      "url": "https://籩f蓧.9qqq.cc/n59"
+      "name": "找AV导航",
+      "url": "https://uo2xsr.zavdh18.qpon/3kkh52h"
     },
     {
       "name": "6DD导航",
-      "url": "http://6146d.5ddd6.top/app/v9NtgY"
+      "url": "http://6146d.5ddd6.top/app/f6nEP9"
     },
     {
       "name": "红颜导航",
-      "url": "http://614hy.hongyan2.top/app/Ais9PO"
+      "url": "http://614hy.hongyan2.top/app/O18VPF"
+    },
+    {
+      "name": "柳如烟导航",
+      "url": "http://508lry.lrydd.top/app/psEPAJ"
+    },
+    {
+      "name": "22点导航",
+      "url": "http://ws10d511.ws10d1.top/app/PITIMm"
+    },
+    {
+      "name": "哇嘎入口",
+      "url": "http://625wgrk.wgrk2.top/app/0UDKsv"
+    },
+    {
+      "name": "3838导航",
+      "url": "http://62338.3838dh1.top/app/FzsCgx"
+    },
+    {
+      "name": "大丈夫导航",
+      "url": "http://627heping.dazf2.top/app/dN3vzo"
     }
   ],
 
-  "localhost": [
+  "yy1080.pages.dev": [
     {
-      "name": "本地测试",
-      "url": "http://localhost:5173"
+      "name": "网址发布",
+      "url": "https://91av.pages.dev"
     }
   ]
 }
