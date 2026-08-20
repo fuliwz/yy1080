@@ -8,36 +8,14 @@ const CACHE_TIME = 60 * 1000;
 function fixVod(item) {
   if (!item) return item;
   let pic = item.vod_pic || item.vod_pic_thumb || item.vod_pic_slide || item.vod_pic_small || "";
-  if (pic && !/^https?:\/\//i.test(pic)) pic = pic.startsWith("//") ? `https:${pic}` : pic;
+  if (pic && !/^https?:\/\//i.test(pic)) pic = "https://i0.wp.com/" + pic.replace(/^https?:\/\//, "");
   return { ...item, vod_pic: pic || "/fallback.jpg" };
 }
 
 function normalize(res) {
-  if (!res?.data) return res;
-  const payload = res.data;
-  const info = payload?.info && typeof payload.info === "object" ? payload.info : null;
-  const root = payload?.data && typeof payload.data === "object" ? payload.data : payload;
-
-  if (info && Array.isArray(info.rows)) {
-    const limit = Number(info.limit || 20) || 20;
-    const offset = Number(info.offset || 0) || 0;
-    const total = Number(info.total || info.rows.length) || 0;
-    const list = info.rows.map(fixVod);
-    res.data = {
-      ...payload,
-      ...info,
-      list,
-      rows: list,
-      page: Math.floor(offset / limit) + 1,
-      pagecount: Math.max(1, Math.ceil(total / limit)),
-      total
-    };
-    return res;
-  }
-
-  if (Array.isArray(root?.list)) {
-    if (root !== payload) res.data = { ...payload, ...root, list: root.list.map(fixVod) };
-    else res.data.list = root.list.map(fixVod);
+  if (res?.data) {
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    if (Array.isArray(root.list)) root.list = root.list.map(fixVod);
   }
   return res;
 }
@@ -75,48 +53,74 @@ async function request(url, params = {}, retry = 1) {
 
 const get = (url, params = {}) => request(url, params);
 
-// Legacy Provide API is kept for category discovery and playback compatibility.
+// Legacy AppleCMS Provide API. The upstream provider currently does not
+// expose the V2 /vod/get_list/ endpoint, so homepage data stays on pg-based API.
 export function getClass() {
   return get("/api.php/provide/vod/", { ac: "list", pg: 1, pagesize: 100 });
 }
 
-// AppleCMS V2 home/list API: offset + limit + documented orderby.
-export function getHome(page = 1, limit = 20, orderby = "pubdate") {
-  const offset = Math.max(0, (page - 1) * limit);
-  return get("/api.php/vod/get_list/", { offset, limit, orderby });
+// Keep a shuffled pool so simultaneous homepage sections receive different
+// pg values instead of repeatedly requesting pg=1. The pool is reshuffled
+// after it is exhausted.
+let homePagePool = [];
+function nextHomePage(min = 1, max = 10) {
+  if (!homePagePool.length) {
+    homePagePool = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    for (let i = homePagePool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [homePagePool[i], homePagePool[j]] = [homePagePool[j], homePagePool[i]];
+    }
+  }
+  return homePagePool.pop();
 }
 
-function getFeed(page = 1, limit = 12, orderby = "pubdate") {
-  return getHome(page, limit, orderby);
+export function getHome(page = 1, limit = 20) {
+  const pg = page > 1 ? page : nextHomePage(1, 10);
+  return get("/api.php/provide/vod/", { ac: "detail", pg, limit });
 }
 
-export function getLatestVideos(page = 1, limit = 12) { return getFeed(page, limit, "pubdate"); }
-export function getHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits"); }
-export function getDayHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_day"); }
-export function getWeekHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_week"); }
-export function getMonthHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_month"); }
-export function getTopVideos(page = 1, limit = 12) { return getFeed(page, limit, "score"); }
-
-export async function getCategory(id, page = 1, sort = "pubdate", limit = 20) {
-  const offset = Math.max(0, (page - 1) * limit);
-  return get("/api.php/vod/get_list/", { type_id: id, offset, limit, orderby: sort });
+// The current upstream ignores the custom sort parameter. These functions
+// intentionally use different random pg values so the homepage sections
+// still show different batches of content.
+export function getLatestVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
+}
+export function getHotVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
+}
+export function getDayHotVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
+}
+export function getWeekHotVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
+}
+export function getMonthHotVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
+}
+export function getTopVideos(page = 1, limit = 12) {
+  return getHome(page, limit);
 }
 
-export async function searchVideo(wd, page = 1, limit = 20) {
+export async function getCategory(id, page = 1, sort = "latest") {
+  return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page, sort });
+}
+
+export async function searchVideo(wd, page = 1) {
   const keyword = (wd || "").trim();
-  if (!keyword) return { data: { list: [], page: 1, pagecount: 0, total: 0 } };
-  const offset = Math.max(0, (page - 1) * limit);
-  return get("/api.php/vod/get_list/", { vod_name: keyword, offset, limit, orderby: "pubdate" });
+  if (!keyword) return { data: { list: [], pagecount: 0 } };
+  return get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: page });
 }
 
-// Keep the playback detail contract on the legacy endpoint because Play.vue
-// consumes vod_play_url and the Provide detail response already supplies it.
 export function getDetail(id) {
   return get("/api.php/provide/vod/", { ac: "detail", ids: id });
 }
 
 export function getCategoryLatest(id, limit = 12) {
-  return getCategory(id, 1, "pubdate", limit);
+  return getCategory(id, 1, "latest").then(res => {
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    root.list = (root.list || []).slice(0, limit);
+    return res;
+  });
 }
 
 let classCache = null;
@@ -140,11 +144,10 @@ async function asyncPool(limit, array, iteratorFn) {
 
 async function hasVideo(type_id) {
   try {
-    const res = await get("/api.php/vod/get_list/", { type_id, offset: 0, limit: 1, orderby: "pubdate" });
-    return (res.data?.list || []).length > 0;
-  } catch {
-    return false;
-  }
+    const res = await get("/api.php/provide/vod/", { ac: "detail", t: type_id, pg: 1, limit: 1 });
+    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    return (root?.list || []).length > 0;
+  } catch { return false; }
 }
 
 export async function getActiveClass() {
@@ -159,4 +162,6 @@ export async function getActiveClass() {
   return classCache;
 }
 
-export function clearApiCache() { responseCache.clear(); }
+export function clearApiCache() {
+  responseCache.clear();
+}
