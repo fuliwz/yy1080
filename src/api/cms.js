@@ -53,17 +53,14 @@ async function request(url, params = {}, retry = 1) {
 
 const get = (url, params = {}) => request(url, params);
 
-// Legacy AppleCMS Provide API. The upstream provider currently does not
-// expose the V2 /vod/get_list/ endpoint, so homepage data stays on pg-based API.
 export function getClass() {
   return get("/api.php/provide/vod/", { ac: "list", pg: 1, pagesize: 100 });
 }
 
-// Keep a shuffled pool so simultaneous homepage sections receive different
-// pg values instead of repeatedly requesting pg=1. The pool is reshuffled
-// after it is exhausted.
+// Homepage random pages deliberately use a wide 1-500 range. Each section
+// gets a different page from a shuffled pool until the pool is exhausted.
 let homePagePool = [];
-function nextHomePage(min = 1, max = 10) {
+function nextHomePage(min = 1, max = 500) {
   if (!homePagePool.length) {
     homePagePool = Array.from({ length: max - min + 1 }, (_, i) => min + i);
     for (let i = homePagePool.length - 1; i > 0; i--) {
@@ -74,31 +71,31 @@ function nextHomePage(min = 1, max = 10) {
   return homePagePool.pop();
 }
 
-export function getHome(page = 1, limit = 20) {
-  const pg = page > 1 ? page : nextHomePage(1, 10);
+export function getHome(page = 1, limit = 20, randomPage = false) {
+  const pg = randomPage ? nextHomePage(1, 500) : page;
   return get("/api.php/provide/vod/", { ac: "detail", pg, limit });
 }
 
-// The current upstream ignores the custom sort parameter. These functions
-// intentionally use different random pg values so the homepage sections
-// still show different batches of content.
+// Latest is always page 1 on the homepage. Other homepage feeds use a
+// different random page from 1-500. Passing page > 1 explicitly is reserved
+// for normal pagination such as the browse-all-latest section.
 export function getLatestVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, false);
 }
 export function getHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, true);
 }
 export function getDayHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, true);
 }
 export function getWeekHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, true);
 }
 export function getMonthHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, true);
 }
 export function getTopVideos(page = 1, limit = 12) {
-  return getHome(page, limit);
+  return getHome(page, limit, true);
 }
 
 export async function getCategory(id, page = 1, sort = "latest") {
