@@ -15,7 +15,7 @@
         <template v-else><VideoCard v-for="v in list" :key="v.vod_id" :item="v" /></template>
       </div>
       <div v-if="!loading && !list.length" class="empty-state"><i class="bi bi-inbox"></i><strong>这个分类暂时没有影片</strong><span>可以切换排序方式或稍后再试。</span></div>
-      <Pagination v-if="list.length || loading" :page="page" :total="totalPage" @change="changePage" />
+      <Pagination v-if="!loading && totalPage > 1 || loading && totalPage > 1" :page="page" :total="totalPage" @change="changePage" />
     </div>
   </main>
 </template>
@@ -39,20 +39,52 @@ const sorts = [
 ]
 const activeSortLabel = computed(() => sorts.find(v => v.key === sort.value)?.label || '最新')
 
+function getPageCount(data) {
+  const pagecount = Number(data?.pagecount || data?.page_count || data?.pages || 0)
+  if (pagecount > 0) return pagecount
+  const total = Number(data?.total || data?.recordcount || 0)
+  const limit = Number(data?.limit || 20)
+  return total > 0 ? Math.max(1, Math.ceil(total / limit)) : 1
+}
+
 async function loadData() {
-  page.value = Math.max(1, Number(route.params.page || 1) || 1)
+  const routePage = Number(route.params.page || 1)
+  page.value = Number.isInteger(routePage) && routePage > 0 ? routePage : 1
   sort.value = sorts.some(v => v.key === route.query.sort) ? route.query.sort : 'latest'
   loading.value = true
   try {
     const r = await getCategory(route.params.id, page.value, sort.value)
-    list.value = r?.data?.list || []
-    totalPage.value = Number(r?.data?.pagecount || 1)
+    const data = r?.data || {}
+    list.value = Array.isArray(data.list) ? data.list : []
+    totalPage.value = getPageCount(data)
     typeName.value = list.value[0]?.type_name || typeName.value || '影片分类'
-  } catch { list.value = []; totalPage.value = 1 } finally { loading.value = false }
+  } catch {
+    list.value = []
+    totalPage.value = 1
+  } finally {
+    loading.value = false
+  }
   document.title = `${typeName.value} - ${activeSortLabel.value} - 91精品`
 }
-function changeSort(key) { router.push({ name:'category', params:{ id:route.params.id }, query:{ sort:key } }) }
-function changePage(p) { router.push({ name:'category', params:{ id:route.params.id, ...(Number(p)>1 ? {page:String(p)} : {}) }, query:{ sort:sort.value } }) }
+
+function changeSort(key) {
+  router.push({
+    name:'category',
+    params:{ id:route.params.id },
+    query:{ sort:key }
+  })
+}
+
+function changePage(p) {
+  const nextPage = Math.max(1, Number(p) || 1)
+  if (nextPage === page.value) return
+  router.push({
+    name:'category',
+    params:{ id:route.params.id, page:String(nextPage) },
+    query:{ sort:sort.value }
+  })
+}
+
 watch(() => route.fullPath, loadData, { immediate:true })
 </script>
 
