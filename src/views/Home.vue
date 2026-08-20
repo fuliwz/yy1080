@@ -26,7 +26,7 @@
 
       <section id="featured" v-if="featuredList.length" class="featured-section content-section">
         <div class="section-bar compact">
-          <div><div class="section-kicker">TOP RATED</div><h2 class="section-heading">高分精选</h2><div class="section-subtitle">按 AppleCMS 评分排序精选内容</div></div>
+          <div><div class="section-kicker">TOP RATED</div><h2 class="section-heading">高分精选</h2><div class="section-subtitle">按评分排序精选内容</div></div>
         </div>
         <div class="featured-grid">
           <router-link v-for="(item, index) in featuredList" :key="item.vod_id" :to="`/play/${item.vod_id}`" class="featured-card">
