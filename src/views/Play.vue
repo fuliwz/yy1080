@@ -44,8 +44,8 @@
       </div>
 
       <section v-if="recommend.length" class="recommend-section">
-        <div class="section-bar"><div><div class="section-kicker">MORE FOR YOU</div><h2 class="section-heading">猜你喜欢</h2><div class="section-subtitle">更多同类精彩内容</div></div><span class="section-count">{{ recommend.length }} 部</span></div>
-        <div class="video-grid"><VideoCard v-for="item in recommend" :key="item.vod_id" :item="item" /></div>
+        <div class="section-bar"><div><div class="section-kicker">MORE FOR YOU</div><h2 class="section-heading">猜你喜欢</h2><div class="section-subtitle">更多同类精彩内容</div></div><span class="section-count">{{ Math.min(recommend.length, 20) }} 部</span></div>
+        <div class="video-grid"><VideoCard v-for="item in recommend.slice(0, 20)" :key="item.vod_id" :item="item" /></div>
       </section>
     </div>
   </main>
@@ -131,8 +131,8 @@ async function loadData() {
     const url = vod.value.vod_play_url?.split('#')?.[0]?.split('$')?.[1]
     initPlayer(url)
     if (vod.value.type_id) {
-      const rec = await getCategoryLatest(vod.value.type_id, 12)
-      recommend.value = (rec?.data?.list || []).filter(v => String(v.vod_id) !== String(vod.value.vod_id))
+      const rec = await getCategoryLatest(vod.value.type_id, 21)
+      recommend.value = (rec?.data?.list || []).filter(v => String(v.vod_id) !== String(vod.value.vod_id)).slice(0, 20)
     }
     document.title = `${vod.value.vod_name} - 91精品 - 在线观看`
   } catch (error) { console.error('播放页加载失败:', error); playerLoading.value = true; playerMessage.value = '视频加载失败，请刷新重试' }
