@@ -8,30 +8,26 @@ const CACHE_TIME = 60 * 1000;
 function fixVod(item) {
   if (!item) return item;
   let pic = item.vod_pic || item.vod_pic_thumb || item.vod_pic_slide || item.vod_pic_small || "";
-  if (pic && !/^https?:\/\//i.test(pic)) {
-    pic = pic.startsWith("//") ? `https:${pic}` : pic;
-  }
+  if (pic && !/^https?:\/\//i.test(pic)) pic = pic.startsWith("//") ? `https:${pic}` : pic;
   return { ...item, vod_pic: pic || "/fallback.jpg" };
 }
 
 function normalize(res) {
   if (!res?.data) return res;
-
   const payload = res.data;
   const info = payload?.info && typeof payload.info === "object" ? payload.info : null;
   const root = payload?.data && typeof payload.data === "object" ? payload.data : payload;
 
-  // AppleCMS V2 list APIs return info.rows, while the legacy Provide API
-  // returns list directly. Normalize both to the shape used by the Vue UI.
   if (info && Array.isArray(info.rows)) {
     const limit = Number(info.limit || 20) || 20;
     const offset = Number(info.offset || 0) || 0;
     const total = Number(info.total || info.rows.length) || 0;
+    const list = info.rows.map(fixVod);
     res.data = {
       ...payload,
       ...info,
-      list: info.rows.map(fixVod),
-      rows: info.rows.map(fixVod),
+      list,
+      rows: list,
       page: Math.floor(offset / limit) + 1,
       pagecount: Math.max(1, Math.ceil(total / limit)),
       total
@@ -40,11 +36,8 @@ function normalize(res) {
   }
 
   if (Array.isArray(root?.list)) {
-    if (root !== payload) {
-      res.data = { ...payload, ...root, list: root.list.map(fixVod) };
-    } else {
-      res.data.list = root.list.map(fixVod);
-    }
+    if (root !== payload) res.data = { ...payload, ...root, list: root.list.map(fixVod) };
+    else res.data.list = root.list.map(fixVod);
   }
   return res;
 }
@@ -82,12 +75,12 @@ async function request(url, params = {}, retry = 1) {
 
 const get = (url, params = {}) => request(url, params);
 
-// Legacy AppleCMS Provide API is kept for category discovery and compatibility.
+// Legacy Provide API is kept for category discovery and playback compatibility.
 export function getClass() {
   return get("/api.php/provide/vod/", { ac: "list", pg: 1, pagesize: 100 });
 }
 
-// AppleCMS V2 home/list API. `offset` is used instead of the old `pg` parameter.
+// AppleCMS V2 home/list API: offset + limit + documented orderby.
 export function getHome(page = 1, limit = 20, orderby = "pubdate") {
   const offset = Math.max(0, (page - 1) * limit);
   return get("/api.php/vod/get_list/", { offset, limit, orderby });
@@ -97,29 +90,12 @@ function getFeed(page = 1, limit = 12, orderby = "pubdate") {
   return getHome(page, limit, orderby);
 }
 
-export function getLatestVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "pubdate");
-}
-
-export function getHotVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "hits");
-}
-
-export function getDayHotVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "hits_day");
-}
-
-export function getWeekHotVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "hits_week");
-}
-
-export function getMonthHotVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "hits_month");
-}
-
-export function getTopVideos(page = 1, limit = 12) {
-  return getFeed(page, limit, "score");
-}
+export function getLatestVideos(page = 1, limit = 12) { return getFeed(page, limit, "pubdate"); }
+export function getHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits"); }
+export function getDayHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_day"); }
+export function getWeekHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_week"); }
+export function getMonthHotVideos(page = 1, limit = 12) { return getFeed(page, limit, "hits_month"); }
+export function getTopVideos(page = 1, limit = 12) { return getFeed(page, limit, "score"); }
 
 export async function getCategory(id, page = 1, sort = "pubdate", limit = 20) {
   const offset = Math.max(0, (page - 1) * limit);
@@ -133,8 +109,10 @@ export async function searchVideo(wd, page = 1, limit = 20) {
   return get("/api.php/vod/get_list/", { vod_name: keyword, offset, limit, orderby: "pubdate" });
 }
 
+// Keep the playback detail contract on the legacy endpoint because Play.vue
+// consumes vod_play_url and the Provide detail response already supplies it.
 export function getDetail(id) {
-  return get("/api.php/vod/get_detail/", { vod_id: id });
+  return get("/api.php/provide/vod/", { ac: "detail", ids: id });
 }
 
 export function getCategoryLatest(id, limit = 12) {
@@ -181,6 +159,4 @@ export async function getActiveClass() {
   return classCache;
 }
 
-export function clearApiCache() {
-  responseCache.clear();
-}
+export function clearApiCache() { responseCache.clear(); }
