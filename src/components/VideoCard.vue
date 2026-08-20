@@ -4,7 +4,7 @@
       <img :src="coverUrl" :alt="item.vod_name || '视频封面'" class="thumb" loading="lazy" decoding="async" @error="handleImageError" />
       <div class="thumb-shade"></div>
       <div v-if="item.type_name" class="tag category">{{ item.type_name }}</div>
-      <div v-if="item.vod_time || item.vod_remarks" class="tag time">{{ item.vod_time || item.vod_remarks }}</div>
+      <div v-if="item.vod_duration || item.vod_remarks" class="tag time">{{ item.vod_duration || item.vod_remarks }}</div>
       <div class="play-btn" aria-hidden="true"><i class="bi bi-play-fill"></i></div>
       <div class="card-bottom"><span><i class="bi bi-play-circle-fill"></i> {{ item.vod_hits || 0 }}</span><span v-if="item.vod_score"><i class="bi bi-star-fill"></i> {{ item.vod_score }}</span></div>
     </div>
