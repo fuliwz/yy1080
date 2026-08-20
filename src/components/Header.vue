@@ -21,6 +21,13 @@
     </div>
   </header>
 
+  <section v-if="links.length" class="header-links" aria-label="友情链接">
+    <div class="header-links-inner">
+      <span class="links-title"><i class="bi bi-link-45deg"></i> 友情链接</span>
+      <a v-for="item in links" :key="item.url" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.name }}</a>
+    </div>
+  </section>
+
   <div v-if="drawerOpen" class="drawer-mask" @click="drawerOpen=false"></div>
   <aside class="drawer" :class="{open:drawerOpen}" aria-label="分类导航">
     <div class="drawer-header"><div class="drawer-title">浏览影片</div><button class="close-btn" type="button" aria-label="关闭" @click="drawerOpen=false"><i class="bi bi-x-lg"></i></button></div>
@@ -44,6 +51,7 @@ const router = useRouter()
 const route = useRoute()
 const keyword = ref('')
 const classList = ref([])
+const links = ref([])
 const drawerOpen = ref(false)
 
 function goSearch() {
@@ -67,7 +75,23 @@ async function loadClass() {
   } catch { classList.value = [] }
 }
 
-onMounted(loadClass)
+async function loadLinks() {
+  try {
+    const r = await fetch(`/links.js?_=${Date.now()}`, { cache: 'no-cache' })
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const config = await r.json()
+    const hostname = window.location.hostname.toLowerCase()
+    links.value = Array.isArray(config[hostname]) ? config[hostname] : []
+  } catch (error) {
+    console.error('[Header] 友情链接加载失败:', error)
+    links.value = []
+  }
+}
+
+onMounted(() => {
+  loadClass()
+  loadLinks()
+})
 </script>
 
 <style scoped>
@@ -76,6 +100,7 @@ onMounted(loadClass)
 .brand{display:inline-flex;align-items:center;gap:7px;color:#fff;text-decoration:none;font-size:18px;font-weight:800;white-space:nowrap}.brand-mark{color:#fff;background:linear-gradient(135deg,#ff416d,#ff7894);padding:4px 7px;border-radius:8px;box-shadow:0 5px 18px rgba(255,77,115,.25)}
 .desktop-nav{display:flex;align-items:center;gap:3px;min-width:0;overflow:hidden;margin-left:4px}.nav-link{padding:8px 9px;border-radius:8px;color:#a9a9b2;text-decoration:none;font-size:12px;white-space:nowrap;transition:.2s}.nav-link:hover,.nav-link.router-link-active{color:#fff;background:rgba(255,255,255,.06)}
 .search-box{margin-left:auto;display:flex;align-items:center;width:min(310px,30vw);min-width:170px;height:40px;padding-left:12px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#15151b}.search-icon{color:#777783;font-size:14px}.search-input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#fff;padding:0 10px;font-size:13px}.search-input::placeholder{color:#666671}.search-btn{height:32px;margin-right:4px;padding:0 12px;border:0;border-radius:9px;background:#ff4d73;color:#fff;font-size:12px;font-weight:650;cursor:pointer}.search-btn:hover{background:#ff6385}
+.header-links{border-bottom:1px solid rgba(255,255,255,.06);background:rgba(17,17,23,.94)}.header-links-inner{width:min(1400px,calc(100% - 32px));min-height:42px;margin:0 auto;display:flex;align-items:center;gap:8px 18px;overflow-x:auto;white-space:nowrap}.links-title{color:#777783;font-size:11px;font-weight:700;flex:0 0 auto}.links-title i{color:#ff7894;margin-right:4px}.header-links a{color:#92929d;text-decoration:none;font-size:11px;transition:color .2s}.header-links a:hover{color:#ff7894}
 .drawer-mask{position:fixed;inset:0;z-index:1098;background:rgba(0,0,0,.72)}.drawer{position:fixed;top:0;left:0;z-index:1099;width:290px;max-width:86vw;height:100vh;overflow-y:auto;background:#111117;border-right:1px solid rgba(255,255,255,.08);transform:translateX(-100%);transition:transform .25s ease;box-shadow:18px 0 40px rgba(0,0,0,.35)}.drawer.open{transform:translateX(0)}.drawer-header{height:68px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07)}.drawer-title{color:#fff;font-weight:750}.close-btn{border:0;background:transparent;color:#777783;font-size:17px;cursor:pointer}.drawer-body{padding:12px}.drawer-item{display:flex;align-items:center;gap:11px;margin:3px 0;padding:11px 12px;border-radius:9px;color:#aaaab3;text-decoration:none;font-size:14px}.drawer-item i{width:18px;text-align:center;color:#ff7894}.drawer-item:hover,.drawer-item.router-link-active{color:#fff;background:rgba(255,77,115,.12)}.drawer-divider{margin:16px 8px 7px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);color:#666670;font-size:10px;font-weight:800;letter-spacing:.14em}
-@media(max-width:1100px){.desktop-nav .nav-link:nth-child(n+7){display:none}}@media(max-width:900px){.desktop-nav{display:none}.search-box{width:min(320px,48vw)}}@media(max-width:640px){.header-inner{width:calc(100% - 20px);min-height:60px;gap:9px}.brand{font-size:16px}.menu-btn{width:36px;height:36px}.search-box{width:auto;flex:1;min-width:0}.search-btn{font-size:11px;padding:0 9px}}
+@media(max-width:1100px){.desktop-nav .nav-link:nth-child(n+7){display:none}}@media(max-width:900px){.desktop-nav{display:none}.search-box{width:min(320px,48vw)}}@media(max-width:640px){.header-inner{width:calc(100% - 20px);min-height:60px;gap:9px}.brand{font-size:16px}.menu-btn{width:36px;height:36px}.search-box{width:auto;flex:1;min-width:0}.search-btn{font-size:11px;padding:0 9px}.header-links-inner{width:calc(100% - 20px);min-height:40px;gap:8px 14px}}
 </style>
