@@ -74,34 +74,22 @@ function normalizeHost(hostname) {
 function findLinks(config, hostname) {
   const host = normalizeHost(hostname)
   if (!host) return []
-
-  // 1. 完整域名精确匹配，兼容 links.js 中未来直接配置具体子域名的情况。
   if (Array.isArray(config[host])) return config[host]
-
-  // 2. 去掉 www. 后再匹配，例如 www.91xxx.cyou -> 91xxx.cyou。
   const withoutWww = host.replace(/^www\./, '')
   if (Array.isArray(config[withoutWww])) return config[withoutWww]
-
-  // 3. 从右向左逐级匹配配置域名，支持任意层级随机子域名：
-  //    98fc-f9c5.91xxx.cyou / a.b.c.91xxx.cyou -> 91xxx.cyou。
   const parts = withoutWww.split('.')
   for (let i = 1; i < parts.length - 1; i++) {
     const parentDomain = parts.slice(i).join('.')
     if (Array.isArray(config[parentDomain])) return config[parentDomain]
   }
-
-  // 4. 最后兼容 localhost、带端口的本地环境等场景。
   const hostOnly = withoutWww.split(':')[0]
   if (Array.isArray(config[hostOnly])) return config[hostOnly]
   return []
 }
 
-async function loadLinks() {
+function loadLinks() {
   try {
-    const r = await fetch(`/links.js?_=${Date.now()}`, { cache: 'no-cache' })
-    if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    const config = await r.json()
-    links.value = findLinks(config, window.location.hostname || window.location.host)
+    links.value = findLinks(__FRIEND_LINKS__, window.location.hostname || window.location.host)
   } catch (error) {
     console.error('[Header] 友情链接加载失败:', error)
     links.value = []
