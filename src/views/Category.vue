@@ -9,13 +9,19 @@
         <button v-for="item in sorts" :key="item.key" :class="{active: sort === item.key}" type="button" @click="changeSort(item.key)"><i :class="item.icon"></i>{{ item.label }}</button>
       </div>
 
-      <div class="section-bar"><div><h2 class="section-heading">{{ activeSortLabel }}</h2><div class="section-subtitle">第 {{ page }} 页 · {{ totalPage }} 页</div></div></div>
+      <div class="section-bar"><div><h2 class="section-heading">{{ activeSortLabel }}</h2><div class="section-subtitle">第 {{ page }} 页 · 共 {{ totalPage }} 页</div></div></div>
       <div class="video-grid">
-        <template v-if="loading"><div v-for="i in 10" :key="i"><VideoCardSkeleton /></div></template>
+        <template v-if="loading"><div v-for="i in 12" :key="i"><VideoCardSkeleton /></div></template>
         <template v-else><VideoCard v-for="v in list" :key="v.vod_id" :item="v" /></template>
       </div>
       <div v-if="!loading && !list.length" class="empty-state"><i class="bi bi-inbox"></i><strong>这个分类暂时没有影片</strong><span>可以切换排序方式或稍后再试。</span></div>
-      <Pagination v-if="!loading && totalPage > 1 || loading && totalPage > 1" :page="page" :total="totalPage" @change="changePage" />
+
+      <Pagination
+        v-if="totalPage > 1"
+        :page="page"
+        :total="totalPage"
+        @change="changePage"
+      />
     </div>
   </main>
 </template>
@@ -28,8 +34,15 @@ import VideoCard from '../components/VideoCard.vue'
 import VideoCardSkeleton from '../components/VideoCardSkeleton.vue'
 import Pagination from '../components/Pagination.vue'
 
-const route = useRoute(), router = useRouter()
-const list = ref([]), loading = ref(false), page = ref(1), totalPage = ref(1), typeName = ref('影片分类'), sort = ref(String(route.query.sort || 'latest'))
+const route = useRoute()
+const router = useRouter()
+const list = ref([])
+const loading = ref(false)
+const page = ref(1)
+const totalPage = ref(1)
+const typeName = ref('影片分类')
+const sort = ref(String(route.query.sort || 'latest'))
+
 const sorts = [
   { key:'latest', label:'最新', icon:'bi bi-lightning-charge-fill' },
   { key:'hot', label:'最热', icon:'bi bi-fire' },
@@ -37,14 +50,26 @@ const sorts = [
   { key:'week', label:'本周热门', icon:'bi bi-graph-up-arrow' },
   { key:'score', label:'高分', icon:'bi bi-star-fill' }
 ]
+
 const activeSortLabel = computed(() => sorts.find(v => v.key === sort.value)?.label || '最新')
 
-function getPageCount(data) {
-  const pagecount = Number(data?.pagecount || data?.page_count || data?.pages || 0)
-  if (pagecount > 0) return pagecount
-  const total = Number(data?.total || data?.recordcount || 0)
-  const limit = Number(data?.limit || 20)
-  return total > 0 ? Math.max(1, Math.ceil(total / limit)) : 1
+function unwrap(data) {
+  if (data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) return data.data
+  return data || {}
+}
+
+function getPageCount(data, currentListLength) {
+  const direct = Number(data?.pagecount || data?.page_count || data?.pages || 0)
+  if (direct > 0) return direct
+
+  const total = Number(data?.total || data?.recordcount || data?.totalcount || 0)
+  const limit = Number(data?.limit || data?.pagesize || 12)
+  if (total > 0 && limit > 0) return Math.max(1, Math.ceil(total / limit))
+
+  // Some legacy Provide APIs omit pagecount but return a full page of items.
+  // Keep the pager available when there is another page to request.
+  if (currentListLength >= limit) return Math.max(2, Number(page.value) + 1)
+  return 1
 }
 
 async function loadData() {
@@ -52,11 +77,12 @@ async function loadData() {
   page.value = Number.isInteger(routePage) && routePage > 0 ? routePage : 1
   sort.value = sorts.some(v => v.key === route.query.sort) ? route.query.sort : 'latest'
   loading.value = true
+
   try {
-    const r = await getCategory(route.params.id, page.value, sort.value)
-    const data = r?.data || {}
+    const response = await getCategory(route.params.id, page.value, sort.value)
+    const data = unwrap(response?.data)
     list.value = Array.isArray(data.list) ? data.list : []
-    totalPage.value = getPageCount(data)
+    totalPage.value = getPageCount(data, list.value.length)
     typeName.value = list.value[0]?.type_name || typeName.value || '影片分类'
   } catch {
     list.value = []
@@ -64,28 +90,32 @@ async function loadData() {
   } finally {
     loading.value = false
   }
+
   document.title = `${typeName.value} - ${activeSortLabel.value} - 91精品`
 }
 
 function changeSort(key) {
   router.push({
-    name:'category',
-    params:{ id:route.params.id },
-    query:{ sort:key }
+    name: 'category',
+    params: { id: route.params.id },
+    query: { sort: key }
   })
 }
 
-function changePage(p) {
-  const nextPage = Math.max(1, Number(p) || 1)
+function changePage(next) {
+  const nextPage = Math.max(1, Number(next) || 1)
   if (nextPage === page.value) return
   router.push({
-    name:'category',
-    params:{ id:route.params.id, page:String(nextPage) },
-    query:{ sort:sort.value }
+    name: 'category',
+    params: {
+      id: route.params.id,
+      page: String(nextPage)
+    },
+    query: { sort: sort.value }
   })
 }
 
-watch(() => route.fullPath, loadData, { immediate:true })
+watch(() => route.fullPath, loadData, { immediate: true })
 </script>
 
 <style scoped>
