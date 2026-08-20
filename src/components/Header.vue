@@ -3,7 +3,6 @@
     <div class="header-inner">
       <button class="menu-btn" type="button" aria-label="打开分类导航" @click="drawerOpen=true"><i class="bi bi-list"></i></button>
       <router-link class="brand" to="/" aria-label="91精品首页"><span class="brand-mark">91</span><span>精品</span></router-link>
-
       <nav class="desktop-nav" aria-label="主导航">
         <router-link to="/" class="nav-link">首页</router-link>
         <a href="#latest" class="nav-link" @click="goHomeAnchor('latest')">最新</a>
@@ -12,12 +11,7 @@
         <router-link to="/history" class="nav-link">历史</router-link>
         <router-link v-for="c in classList.slice(0, 4)" :key="c.type_id" :to="{name:'category',params:{id:c.type_id}}" class="nav-link">{{ c.type_name }}</router-link>
       </nav>
-
-      <form class="search-box" @submit.prevent="goSearch">
-        <i class="bi bi-search search-icon"></i>
-        <input v-model="keyword" class="search-input" placeholder="搜索影片" aria-label="搜索影片" />
-        <button class="search-btn" type="submit" aria-label="搜索">搜索</button>
-      </form>
+      <form class="search-box" @submit.prevent="goSearch"><i class="bi bi-search search-icon"></i><input v-model="keyword" class="search-input" placeholder="搜索影片" aria-label="搜索影片" /><button class="search-btn" type="submit" aria-label="搜索">搜索</button></form>
     </div>
   </header>
 
@@ -63,9 +57,7 @@ function goHomeAnchor(id, close = false) {
   if (close) drawerOpen.value = false
   if (route.name !== 'home') {
     router.push({ name: 'home' }).then(() => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 80))
-  } else {
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 0)
-  }
+  } else setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 0)
 }
 
 async function loadClass() {
@@ -75,13 +67,41 @@ async function loadClass() {
   } catch { classList.value = [] }
 }
 
+function normalizeHost(hostname) {
+  return String(hostname || '').trim().toLowerCase().replace(/\.$/, '').split(':')[0]
+}
+
+function findLinks(config, hostname) {
+  const host = normalizeHost(hostname)
+  if (!host) return []
+
+  // 1. 完整域名精确匹配，兼容 links.js 中未来直接配置具体子域名的情况。
+  if (Array.isArray(config[host])) return config[host]
+
+  // 2. 去掉 www. 后再匹配，例如 www.91xxx.cyou -> 91xxx.cyou。
+  const withoutWww = host.replace(/^www\./, '')
+  if (Array.isArray(config[withoutWww])) return config[withoutWww]
+
+  // 3. 从右向左逐级匹配配置域名，支持任意层级随机子域名：
+  //    98fc-f9c5.91xxx.cyou / a.b.c.91xxx.cyou -> 91xxx.cyou。
+  const parts = withoutWww.split('.')
+  for (let i = 1; i < parts.length - 1; i++) {
+    const parentDomain = parts.slice(i).join('.')
+    if (Array.isArray(config[parentDomain])) return config[parentDomain]
+  }
+
+  // 4. 最后兼容 localhost、带端口的本地环境等场景。
+  const hostOnly = withoutWww.split(':')[0]
+  if (Array.isArray(config[hostOnly])) return config[hostOnly]
+  return []
+}
+
 async function loadLinks() {
   try {
     const r = await fetch(`/links.js?_=${Date.now()}`, { cache: 'no-cache' })
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
     const config = await r.json()
-    const hostname = window.location.hostname.toLowerCase()
-    links.value = Array.isArray(config[hostname]) ? config[hostname] : []
+    links.value = findLinks(config, window.location.hostname || window.location.host)
   } catch (error) {
     console.error('[Header] 友情链接加载失败:', error)
     links.value = []
