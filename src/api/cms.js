@@ -12,10 +12,16 @@ function fixVod(item) {
   return { ...item, vod_pic: pic || "/fallback.jpg" };
 }
 
+function getPayload(data) {
+  if (data?.data && typeof data.data === "object" && !Array.isArray(data.data)) return data.data;
+  return data || {};
+}
+
 function normalize(res) {
   if (res?.data) {
-    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    const root = getPayload(res.data);
     if (Array.isArray(root.list)) root.list = root.list.map(fixVod);
+    if (root.pagecount == null && root.page_count != null) root.pagecount = root.page_count;
   }
   return res;
 }
@@ -53,12 +59,12 @@ async function request(url, params = {}, retry = 1) {
 
 const get = (url, params = {}) => request(url, params);
 
+// AppleCMS legacy Provide API only. The upstream source uses pg-based
+// pagination and does not use the V2 get_list endpoint.
 export function getClass() {
   return get("/api.php/provide/vod/", { ac: "list", pg: 1, pagesize: 100 });
 }
 
-// Homepage random pages deliberately use a wide 1-500 range. Each section
-// gets a different page from a shuffled pool until the pool is exhausted.
 let homePagePool = [];
 function nextHomePage(min = 1, max = 500) {
   if (!homePagePool.length) {
@@ -71,41 +77,49 @@ function nextHomePage(min = 1, max = 500) {
   return homePagePool.pop();
 }
 
+// Homepage: latest is fixed to pg=1; all other sections use a unique random
+// pg in the wide 1-500 range.
 export function getHome(page = 1, limit = 20, randomPage = false) {
-  const pg = randomPage ? nextHomePage(1, 500) : page;
+  const pg = randomPage ? nextHomePage(1, 500) : Math.max(1, Number(page) || 1);
   return get("/api.php/provide/vod/", { ac: "detail", pg, limit });
 }
 
-// Latest is always page 1 on the homepage. Other homepage feeds use a
-// different random page from 1-500. Passing page > 1 explicitly is reserved
-// for normal pagination such as the browse-all-latest section.
 export function getLatestVideos(page = 1, limit = 12) {
   return getHome(page, limit, false);
 }
 export function getHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit, true);
+  return getHome(1, limit, true);
 }
 export function getDayHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit, true);
+  return getHome(1, limit, true);
 }
 export function getWeekHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit, true);
+  return getHome(1, limit, true);
 }
 export function getMonthHotVideos(page = 1, limit = 12) {
-  return getHome(page, limit, true);
+  return getHome(1, limit, true);
 }
 export function getTopVideos(page = 1, limit = 12) {
-  return getHome(page, limit, true);
+  return getHome(1, limit, true);
 }
 
 export async function getCategory(id, page = 1, sort = "latest") {
-  return get("/api.php/provide/vod/", { ac: "detail", t: id, pg: page, sort });
+  const params = {
+    ac: "detail",
+    t: id,
+    pg: Math.max(1, Number(page) || 1),
+    limit: 12
+  };
+  // Keep the requested sort parameter for compatible legacy sources. It is
+  // never translated into the V2 API or a get_list request.
+  if (sort && sort !== "latest") params.sort = sort;
+  return get("/api.php/provide/vod/", params);
 }
 
 export async function searchVideo(wd, page = 1) {
   const keyword = (wd || "").trim();
   if (!keyword) return { data: { list: [], pagecount: 0 } };
-  return get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: page });
+  return get("/api.php/provide/vod/", { ac: "detail", wd: keyword, pg: Math.max(1, Number(page) || 1), limit: 12 });
 }
 
 export function getDetail(id) {
@@ -114,7 +128,7 @@ export function getDetail(id) {
 
 export function getCategoryLatest(id, limit = 12) {
   return getCategory(id, 1, "latest").then(res => {
-    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    const root = getPayload(res.data);
     root.list = (root.list || []).slice(0, limit);
     return res;
   });
@@ -142,7 +156,7 @@ async function asyncPool(limit, array, iteratorFn) {
 async function hasVideo(type_id) {
   try {
     const res = await get("/api.php/provide/vod/", { ac: "detail", t: type_id, pg: 1, limit: 1 });
-    const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+    const root = getPayload(res.data);
     return (root?.list || []).length > 0;
   } catch { return false; }
 }
@@ -151,7 +165,7 @@ export async function getActiveClass() {
   const now = Date.now();
   if (classCache && now - classCacheTime < CLASS_CACHE_TIME) return classCache;
   const res = await getClass();
-  const root = res.data?.data && typeof res.data.data === "object" ? res.data.data : res.data;
+  const root = getPayload(res.data);
   const all = root?.class || [];
   const result = await asyncPool(5, all, async item => (await hasVideo(item.type_id)) ? item : null);
   classCache = result.filter(Boolean);
@@ -161,4 +175,6 @@ export async function getActiveClass() {
 
 export function clearApiCache() {
   responseCache.clear();
+  pendingRequests.clear();
+  homePagePool = [];
 }
